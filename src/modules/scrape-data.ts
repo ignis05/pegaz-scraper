@@ -1,5 +1,5 @@
 import { Page } from 'puppeteer'
-import { Course } from '../models/course-model'
+import { Activity, Course } from '../models/course-model'
 import { Notifications } from './notifications'
 
 /**
@@ -23,10 +23,31 @@ export function scrapeData(page: Page): Promise<Course[]> {
 			}
 			const title = (await page.$eval('h1.h2', (node) => node.textContent))?.slice(0, 0 - id.length).trim() || 'unknown'
 
-			const course: Course = { id, name: title, url: courseLink }
+			let activities = await getActivities(page)
+
+			const course: Course = { id: id.trim(), name: title, url: courseLink, activities: activities }
 			courses.push(course)
 		}
 
 		resolve(courses)
+	})
+}
+
+function getActivities(page: Page): Promise<Activity[]> {
+	return new Promise<Activity[]>(async (resolve) => {
+		const result: Activity[] = []
+
+		let activities = await page.$$('div.activitytitle')
+
+		for (let activity of activities) {
+			let url = await activity.$eval('a', (node) => node.getAttribute('href'))
+			let name = (await activity.$eval('span.instancename', (node) => node.textContent)) || 'unknown'
+			let type = (await activity.$eval('div.media-body>div.text-uppercase', (node) => node.textContent)) || 'unknown'
+
+			if (!url) continue
+			result.push({ name, type, url })
+		}
+
+		resolve(result)
 	})
 }

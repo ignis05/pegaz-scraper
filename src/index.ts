@@ -1,5 +1,6 @@
 import puppeteer from 'puppeteer'
 import os from 'os'
+import date from 'date-and-time'
 
 import { login } from './modules/login'
 import { Course } from './models/course-model'
@@ -9,6 +10,8 @@ import { generateConfigPlaceholders } from './modules/placeholder-generator'
 async function main() {
 	const browserOptions: puppeteer.LaunchOptions = {}
 	if (os.platform() != 'win32') browserOptions.executablePath = 'chromium-browser'
+
+	const startTime = Date.now()
 
 	const browser = await puppeteer.launch(browserOptions)
 	const page = await browser.newPage()
@@ -20,6 +23,10 @@ async function main() {
 	console.log(courses)
 
 	await browser.close()
+
+	const operationTime = (Date.now() - startTime) / 1000
+	let now = new Date()
+	console.log(`Check @ ${date.format(now, 'YYYY-MM-DDTHH:mm:ss')} completed in ${operationTime.toFixed(2)} seconds`)
 }
 
 async function wrapper() {
