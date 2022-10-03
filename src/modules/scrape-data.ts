@@ -1,5 +1,5 @@
 import { Page } from 'puppeteer'
-import { Activity, Course, Grade } from '../models/course-model'
+import { Activity, Course, Forum, Grade } from '../models/course-model'
 import { Notifications } from './notifications'
 
 /**
@@ -26,13 +26,26 @@ export function scrapeData(page: Page): Promise<Course[]> {
 			const activities = await getActivities(page)
 			const sections = await getSections(page)
 
+			// fetch subpage link fists
 			const gradeLink = await page
 				.$eval('div.secondary-navigation a[href^="https://pegaz.uj.edu.pl/grade/"]', (node) => node.getAttribute('href'))
 				.catch((err) => {})
+			let forumLinks =
+				(await page
+					.$$eval('ul.topics a[href^="https://pegaz.uj.edu.pl/mod/forum/"]', (els) => els.map((el) => el.getAttribute('href')))
+					.catch((err) => {})) || []
 
+			// go directly to subpages, avoid navigating back to main course page
 			const grades = gradeLink ? await getGrades(page, gradeLink) : []
+			const forums: Forum[] = []
+			for (let link of forumLinks) {
+				if (link) {
+					let forum = await getForum(page, link)
+					if (forum) forums.push(forum)
+				}
+			}
 
-			const course: Course = { id: id.trim(), name: title, url: courseLink, sections, activities, grades }
+			const course: Course = { id: id.trim(), name: title, url: courseLink, sections, activities, grades, forums }
 			courses.push(course)
 		}
 
@@ -54,8 +67,8 @@ function getActivities(page: Page): Promise<Activity[]> {
 
 		for (let activity of activities) {
 			let url = (await activity.$eval('a.aalink', (node) => node.getAttribute('href')).catch((err) => {})) || `noUrlElement${counter++}`
-			let name = (await activity.$eval('span.instancename', (n) => n.textContent).catch((err) => {}))?.trim() || 'unknown'
-			let type = (await activity.$eval('div.media-body>div.text-uppercase', (n) => n.textContent).catch((err) => {}))?.trim() || 'none'
+			let name = (await activity.$eval('span.instancename', (n) => n.textContent?.trim()).catch((err) => {})) || 'unknown'
+			let type = (await activity.$eval('div.media-body>div.text-uppercase', (n) => n.textContent?.trim()).catch((err) => {})) || 'none'
 
 			// remove duplicate type in invisible span
 			if (name.endsWith(type)) name = name.slice(0, 0 - type.length).trim()
@@ -81,18 +94,16 @@ function getSections(page: Page): Promise<string[]> {
 
 /**
  * Collects grades, moves to given url
- * @param page 
- * @param url 
- * @returns 
+ * @param page
+ * @param url
+ * @returns
  */
 function getGrades(page: Page, url: string): Promise<Grade[]> {
 	return new Promise(async (resolve) => {
 		let grades: Grade[] = []
 		await page.goto(url)
 
-		let names = await page.$$eval(`th.column-itemname`, (els) =>
-			els.map((el) => ({ name: el.textContent || '-', row: el.id }))
-		)
+		let names = await page.$$eval(`th.column-itemname`, (els) => els.map((el) => ({ name: el.textContent || '-', row: el.id })))
 		let values = await page.$$eval(`td.column-grade`, (els) =>
 			els.map((el) => ({ value: el.textContent || '-', headers: el.getAttribute('headers') || '' }))
 		)
@@ -103,5 +114,41 @@ function getGrades(page: Page, url: string): Promise<Grade[]> {
 		}
 
 		resolve(grades)
+	})
+}
+
+/**
+ * Collects forum topics and last entry date, moves to given url
+ * @param page
+ * @param url
+ * @returns
+ */
+function getForum(page: Page, url: string): Promise<Forum> {
+	return new Promise(async (resolve) => {
+		let forum: Forum = {
+			name: '',
+			url,
+			entries: [],
+		}
+		await page.goto(url)
+
+		let name = await page.$eval('header h1.h2', (n) => n.textContent)
+		forum.name = name || 'unknown'
+
+		let discussions = await page.$$('tr.discussion')
+		for (let discussion of discussions) {
+			let topic = (await discussion.$eval('th.topic', (n) => n.textContent?.trim())) || 'unknown'
+			if (topic.includes('\n')) topic = topic.split('\n')[0]
+
+			let infoblock = await discussion.$('td.text-left div.author-info')
+			if (!infoblock) {
+				Notifications.error(`Forum ${url} has entry with no info`)
+				continue
+			}
+			let author = (await infoblock.$eval('div.text-truncate', (n) => n.textContent)) || 'unknown'
+			let update = (await infoblock.$eval('a', (n) => n.getAttribute('title'))) || '-'
+			forum.entries.push({ topic, author, lastUpdate: update })
+		}
+		resolve(forum)
 	})
 }

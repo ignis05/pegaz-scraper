@@ -5,6 +5,7 @@ export interface Course {
 	sections: string[]
 	activities: Activity[]
 	grades: Grade[]
+	forums: Forum[]
 }
 
 export interface Activity {
@@ -16,4 +17,16 @@ export interface Activity {
 export interface Grade {
 	name: string
 	value: string
+}
+
+export interface ForumEntry {
+	topic: string
+	author: string
+	lastUpdate: string
+}
+
+export interface Forum {
+	name: string
+	url: string
+	entries: ForumEntry[]
 }
