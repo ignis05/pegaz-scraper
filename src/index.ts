@@ -5,7 +5,7 @@ import date from 'date-and-time'
 import { login } from './modules/login'
 import { Course } from './models/course-model'
 import { scrapeData } from './modules/scrape-data'
-import { generateConfigPlaceholders } from './modules/placeholder-generator'
+import { compareData } from './modules/compare-data'
 
 async function main() {
 	const browserOptions: puppeteer.LaunchOptions = {}
@@ -20,7 +20,8 @@ async function main() {
 
 	const courses: Course[] = await scrapeData(page)
 
-	console.log(courses)
+	const changes = await compareData(courses)
+	console.log(changes);
 
 	await browser.close()
 
@@ -29,12 +30,6 @@ async function main() {
 	console.log(`Check @ ${date.format(now, 'YYYY-MM-DDTHH:mm:ss')} completed in ${operationTime.toFixed(2)} seconds`)
 }
 
-async function wrapper() {
-	let canStart = await generateConfigPlaceholders()
-	if (!canStart) process.exit(0)
-
-	console.log(`Starting scraper`)
-	main()
-	// setInterval(main, 15 * 60 * 1000)
-}
-wrapper()
+console.log(`Starting scraper`)
+main()
+// setInterval(main, 15 * 60 * 1000)

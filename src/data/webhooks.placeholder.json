@@ -1,0 +1,5 @@
+{
+	"main": ["https://discord.com/api/webhooks/discord_webhook_url"],
+	"log": ["https://discord.com/api/webhooks/discord_webhook_url"],
+	"error": ["https://discord.com/api/webhooks/discord_webhook_url"]
+}
