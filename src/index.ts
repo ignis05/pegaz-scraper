@@ -27,11 +27,11 @@ async function main() {
 
 	const operationTime = (Date.now() - startTime) / 1000
 	let now = new Date()
-	console.log(`Check @ ${date.format(now, 'YYYY-MM-DDTHH:mm:ss')} completed in ${operationTime.toFixed(2)} seconds`)
+	Notifications.log(`Check @ ${date.format(now, 'YYYY-MM-DDTHH:mm:ss')} completed in ${operationTime.toFixed(2)} seconds`)
 
 	Notifications.sendChanges(changes)
 }
 
 console.log(`Starting scraper`)
 main()
-// setInterval(main, 15 * 60 * 1000)
+setInterval(main, 15 * 60 * 1000)

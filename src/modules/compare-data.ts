@@ -65,7 +65,7 @@ function getUpdatedCourses(oldCourses: Course[], newCourses: Course[]): Course[]
 			}
 		}
 
-		result.push(course)
+		if (course.sections.length + course.activities.length + course.grades.length + course.forums.length > 0) result.push(course)
 	}
 
 	return result
