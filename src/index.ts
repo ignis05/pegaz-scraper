@@ -6,6 +6,7 @@ import { login } from './modules/login'
 import { Course } from './models/course-model'
 import { scrapeData } from './modules/scrape-data'
 import { compareData } from './modules/compare-data'
+import { Notifications } from './modules/notifications'
 
 async function main() {
 	const browserOptions: puppeteer.LaunchOptions = {}
@@ -21,13 +22,14 @@ async function main() {
 	const courses: Course[] = await scrapeData(page)
 
 	const changes = await compareData(courses)
-	console.log(changes);
 
 	await browser.close()
 
 	const operationTime = (Date.now() - startTime) / 1000
 	let now = new Date()
 	console.log(`Check @ ${date.format(now, 'YYYY-MM-DDTHH:mm:ss')} completed in ${operationTime.toFixed(2)} seconds`)
+
+	Notifications.sendChanges(changes)
 }
 
 console.log(`Starting scraper`)

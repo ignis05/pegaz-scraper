@@ -2,7 +2,7 @@ import fs from 'fs'
 import { Activity, Course, Forum, Grade } from '../models/course-model'
 import jsonData from '../data/courses.json'
 
-const oldCourses: Course[] = jsonData
+var oldCourses: Course[] = jsonData
 
 export interface DataComparisonResults {
 	new: Course[]
@@ -11,10 +11,12 @@ export interface DataComparisonResults {
 }
 
 export function compareData(newCourses: Course[]): DataComparisonResults {
-	fs.writeFileSync('./data/courses.json', JSON.stringify(newCourses, null, 2))
 	const newC = getNewCourses(oldCourses, newCourses)
 	const missing = getMissingCourses(oldCourses, newCourses)
 	const updated = getUpdatedCourses(oldCourses, newCourses)
+
+	oldCourses = newCourses
+	fs.writeFileSync('./data/courses.json', JSON.stringify(oldCourses, null, 2))
 
 	return { new: newC, missing, updated }
 }
