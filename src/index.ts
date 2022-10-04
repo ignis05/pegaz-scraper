@@ -26,12 +26,14 @@ async function main() {
 	await browser.close()
 
 	const operationTime = (Date.now() - startTime) / 1000
-	let now = new Date()
-	Notifications.log(`Check @ ${date.format(now, 'YYYY-MM-DDTHH:mm:ss')} completed in ${operationTime.toFixed(2)} seconds`)
+	Notifications.log(
+		`Check @ ${date.format(new Date(), 'YYYY-MM-DD HH:mm:ss')} collected ${courses.length} ` +
+			`courses in ${operationTime.toFixed(2)} seconds`
+	)
 
 	Notifications.sendChanges(changes)
 }
 
-console.log(`Starting scraper`)
+Notifications.log(`Starting scraper @ ${date.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}`, true)
 main()
 setInterval(main, 15 * 60 * 1000)

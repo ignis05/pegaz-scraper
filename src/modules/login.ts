@@ -16,7 +16,8 @@ export function login(page: Page): Promise<void> {
 		await page.keyboard.type(auth.password)
 		await page.click('span#submitButton')
 		// wait for main page to load
-		await page.waitForSelector('a.coursename', { visible: true })
+		await page.waitForSelector('li a.coursename', { visible: true })
+		await new Promise((res) => setTimeout(res, 1000))
 		resolve()
 	})
 }
