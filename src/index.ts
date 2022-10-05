@@ -9,6 +9,8 @@ import { compareData } from './modules/compare-data'
 import { Notifications } from './modules/notifications'
 
 async function main() {
+	Notifications.log(`Started scraping @ ${date.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}`, true)
+
 	const browserOptions: puppeteer.LaunchOptions = {}
 	if (os.platform() != 'win32') browserOptions.executablePath = 'chromium-browser'
 
@@ -19,11 +21,15 @@ async function main() {
 
 	await login(page)
 
-	const courses: Course[] = await scrapeData(page)
-
-	const changes = await compareData(courses)
+	const courses = await scrapeData(page).catch((err) => {
+		Notifications.error(`scrapeData failed: ${err}`)
+	})
 
 	await browser.close()
+
+	if (!courses) return
+
+	const changes = await compareData(courses)
 
 	const operationTime = (Date.now() - startTime) / 1000
 	Notifications.log(
@@ -34,6 +40,5 @@ async function main() {
 	Notifications.sendChanges(changes)
 }
 
-Notifications.log(`Starting scraper @ ${date.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}`, true)
 main()
 setInterval(main, 15 * 60 * 1000)
